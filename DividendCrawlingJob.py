@@ -103,7 +103,7 @@ class DividendCrawlingJob:
 
                 # Parse profit whenever possible
                 try:
-                    profit = float(e[7])
+                    profit = float(e[7].replace(',',''))
                 except:
                     profit = None
 
