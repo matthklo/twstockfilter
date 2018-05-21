@@ -140,6 +140,10 @@ if __name__ == '__main__':
         except:
             continue
 
+        # Skip stocks which has already stopped trading.
+        if 'price' not in e:
+            continue
+
         if etfonly:
             if sid in sdict:
                 elist.append(e)
@@ -154,14 +158,23 @@ if __name__ == '__main__':
         if 'pt5' in e:
             pt5 = e['pt5']
 
-        if etfonly:
-            print('%s %s,\t [dy/5: %.2f%%, %.2f%%] [cdy/5: %.2f%%, %.2f%%] pr: %.2f, pt5: %.2f, ref: %d' % 
-                (e['id'].encode(enc), e['name'].encode(enc), e['dy'], e['dy5'], e['cdy'], e['cdy5'],
-                e['price'], pt5, sdict[int(e['id'])]['refcnt']))
-        else:
-            print('%s %s,\t [dy/5: %.2f%%, %.2f%%] [cdy/5: %.2f%%, %.2f%%] pr: %.2f, pt5: %.2f' % 
-                (e['id'].encode(enc), e['name'].encode(enc), e['dy'], e['dy5'], e['cdy'], e['cdy5'],
-                e['price'], pt5))
+        try:
+            eid = e['id'].encode(enc)
+            ename = e['name'].encode(enc)
+
+            if etfonly:
+                print('%s %s\t[dy/5: %.2f%%, %.2f%%] [cdy/5: %.2f%%, %.2f%%] pr: %.2f, pt5: %.2f, roe: %.2f%%, ref: %d' % 
+                    (eid, ename, e['dy'], e['dy5'], e['cdy'], e['cdy5'],
+                    e['price'], pt5, e['roe'], sdict[int(e['id'])]['refcnt']))
+            else:
+                print('%s %s\t[dy/5: %.2f%%, %.2f%%] [cdy/5: %.2f%%, %.2f%%] pr: %.2f, pt5: %.2f, roe: %.2f%%' % 
+                    (eid, ename, e['dy'], e['dy5'], e['cdy'], e['cdy5'],
+                    e['price'], pt5, e['roe']))
+        except UnicodeEncodeError as exp:
+            print('UnicodeEncodeError when outputing data for stock ' + e['id'].encode(enc))
+        except Exception as exp:
+            print('Exception raised when outputing data for stock %s(%s): %s Message: %s' % 
+                (eid, ename, str(type(exp)), str(exp)))
     
     if tracking:
         print('\nTracking Items')
@@ -174,5 +187,5 @@ if __name__ == '__main__':
                 tdy = e['td'] / ti['price'] * 100.0
                 tcdy = e['cd'] / ti['price'] * 100.0
                 tdiff = (e['price'] - ti['price']) / ti['price'] * 100.0
-                print('%s %s,\t Tracking DY: %.2f%%, Tracking CDY: %.2f%%, PriceDiff: %.2f%%' % (e['id'].encode(enc), e['name'].encode(enc), tdy, tcdy, tdiff))
+                print('%s %s\tTracking DY: %.2f%%, Tracking CDY: %.2f%%, PriceDiff: %.2f%%' % (e['id'].encode(enc), e['name'].encode(enc), tdy, tcdy, tdiff))
                 break
