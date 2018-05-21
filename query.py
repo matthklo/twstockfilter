@@ -174,5 +174,5 @@ if __name__ == '__main__':
                 tdy = e['td'] / ti['price'] * 100.0
                 tcdy = e['cd'] / ti['price'] * 100.0
                 tdiff = (e['price'] - ti['price']) / ti['price'] * 100.0
-                print('%s %s, Tracking DY: %.2f%%, Tracking CDY: %.2f%%, PriceDiff: %.2f%%' % (e['id'].encode(enc), e['name'].encode(enc), tdy, tcdy, tdiff))
+                print('%s %s,\t Tracking DY: %.2f%%, Tracking CDY: %.2f%%, PriceDiff: %.2f%%' % (e['id'].encode(enc), e['name'].encode(enc), tdy, tcdy, tdiff))
                 break
