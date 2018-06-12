@@ -1,5 +1,5 @@
 # twstockfilter
-從奇摩股票、以及 Goodinfo! 這兩個網站為來源，將台灣上市股票資訊抓下來儲存到 Google Cloud Datastore 中 (有免費使用額度)。並且供其它網頁服務使用。
+從 Yahoo!股票、以及 Goodinfo!台灣股市資訊網 這兩個網站為來源，收集台灣上市股票資訊，儲存到 Google Cloud Datastore 中 (有免費使用額度)。並且供其它網頁服務使用 (見以下 "姊妹專案")。
 
 ## 環境設定
 - 可在 Windows / Unix 上執行
@@ -35,3 +35,9 @@
 即可隨時使用 query.py 來查詢。
 
 使用前都需要先設定環境變數 GOOGLE_APPLICATION_CREDENTIALS，內容是你的 Google API 服務帳戶金鑰 JSON 檔案的路徑。
+
+## 姊妹專案
+
+[台灣上市股票過濾器](https://extended-arcana-202009.appspot.com/console.html)
+
+https://gitlab.com/matthklo/gcloud-appengine-twstockfilter
