@@ -50,6 +50,10 @@ def commit_computed_data(entities):
             e.update({'ady3': (e['cd3'] + e['sd3']*ratio)*100.0/price})
         if ('sd5' in e) and ('cd5' in e):
             e.update({'ady5': (e['cd5'] + e['sd5']*ratio)*100.0/price})
+	
+        # per
+        if ('eps' in e) and (e['eps'] > 0):
+            e.update({'per': price/e['eps']})
         
         b.put(e)
         bcnt += 1
@@ -188,5 +192,4 @@ if __name__ == '__main__':
         if g_verbose:
             print('Info: Computing %d entities ...' % len(entities))
         commit_computed_data(entities)
-
         
