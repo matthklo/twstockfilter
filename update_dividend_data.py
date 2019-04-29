@@ -257,11 +257,11 @@ def commit_cdys_data(entities, data):
 def show_usage():
     print('Usage: %s [-v] [-n] [-d] [-y year] [-q stock id]' % sys.argv[0])
     print('    [-v] Show verbose log.')
-    print('    [-n] No data fetching.')
+    print('    [-n] No dividend data processing.')
+    print('    [-c] No CDYS data processing.')
     print('    [-d] Delete all data from database then exit.')
     print('    [-y] Specify the lastest data year. (Default: last year)')
     print('    [-q] Query given stock id.')
-    print('    [-c] Fetch & update CDYS data only.')
 
 if __name__ == '__main__':
     # Check if GOOGLE_APPLICATION_CREDENTIALS environment variable has been set
@@ -278,17 +278,17 @@ if __name__ == '__main__':
         sys.exit(1)
 
     g_verbose = False
-    g_data_fetching = True
+    g_data_processing = True
+    g_cdys_processing = True
     g_year = datetime.date.today().year - 1
     g_gdclient = datastore.Client()
     g_delete = False
-    g_cdys_only = False
 
     for p in pairs:
         if p[0] == '-v':
             g_verbose = True
         elif p[0] == '-n':
-            g_data_fetching = False
+            g_data_processing = False
         elif p[0] == '-d':
             g_delete = True
         elif p[0] == '-y':
@@ -303,7 +303,7 @@ if __name__ == '__main__':
             show_usage()
             sys.exit(0)
         elif p[0] == '-c':
-            g_cdys_only = True
+            g_cdys_processing = False
 
     # Perform data deletion when requested.
     if g_delete:
@@ -335,17 +335,16 @@ if __name__ == '__main__':
         entities[e['id']] = e
 
     # Fetch & update CDYS data
-    cdys_data = fetch_cdys_data(entities)
-    commit_cdys_data(entities, cdys_data)
-    if g_cdys_only:
-        sys.exit(0)
+    if g_cdys_processing:
+        cdys_data = fetch_cdys_data(entities)
+        commit_cdys_data(entities, cdys_data)
 
-    if g_data_fetching:
+    if g_data_processing:
         # Decide the year range of data.
         years = range(g_year, g_year - 6, -1)
 
         if g_verbose:
-            print('Info: Fetching data for year range: ' + str(years))
+            print('Info: Fetching dividend data for year range: ' + str(years))
 
         # Fetch & commit
         data = fetch_data(years)
