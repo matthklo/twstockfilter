@@ -5,6 +5,7 @@ from __future__ import print_function
 from google.cloud import datastore
 from WorkPool import WorkPool
 from DividendCrawlingJob import DividendCrawlingJob
+from CDYSCrawlingJob import CDYSCrawlingJob
 
 import datetime
 import getopt
@@ -196,7 +197,7 @@ def fetch_cdys_data(entities):
     job_cnt = 0
     wp = WorkPool()
     for e in entities.itervalues():
-        j = CDYCrawlingJob(e['id'])
+        j = CDYSCrawlingJob(e['id'])
         wp.append_job(j)
         job_cnt += 1
     wp.start()
@@ -214,10 +215,10 @@ def fetch_cdys_data(entities):
 
         if j.web_req_success == False:
             if g_verbose:
-                print('Warning: CDYCrawlingJob failed on web request. Stock id: ' + str(j.target_id))
+                print('Warning: CDYSCrawlingJob failed on web request. Stock id: ' + str(j.target_id))
         elif j.parse_success == False:
             if g_verbose:
-                print('Warning: CDYCrawlingJob failed on parsing. Stock id: ' + str(j.target_id))
+                print('Warning: CDYSCrawlingJob failed on parsing. Stock id: ' + str(j.target_id))
         else:
             result[j.target_id] = j.data
 

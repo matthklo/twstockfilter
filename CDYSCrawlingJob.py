@@ -5,15 +5,17 @@ from __future__ import print_function
 import json
 import re
 import urllib2
+import random
+import time
 
 """
-    DividendCrawlingJob:
+    CDYSCrawlingJob:
         可配合 WorkPool 使用的 Job 類別
         創建時帶入目標的 stock id，會向 GoodInfo! 網頁抓取該股已連續配發股利的年數 
         (CDYS: Consecutive Dividend Years)
 """
 
-class CDYCrawlingJob:
+class CDYSCrawlingJob:
 
     """
         data source: "Goodinfo!台灣股市資訊網"
@@ -36,12 +38,14 @@ class CDYCrawlingJob:
 
         #### Fire the web request.
         try:
+            # Apply a random delay of 1 ~ 7 seconds to prevent getting banned by GoodInfo!
+            time.sleep(random.random * 6 + 1)
             result = urllib2.urlopen(self.web_req).read().decode('utf-8')
             self.web_req_success = True
         except urllib2.HTTPError as e:
             self.web_req_exception = e
         except Exception as e:
-            print('CDYCrawlingJob: Unexpected exception occurred when crawling for CDYS data. Exception: ' + str(e))
+            print('CDYSCrawlingJob: Unexpected exception occurred when crawling for CDYS data. Exception: ' + str(e))
 
         #### Early abort on error
         if False == self.web_req_success:
@@ -51,10 +55,11 @@ class CDYCrawlingJob:
 
         try:
             m = re.search(u'連續([0-9]+)年配發股利', result)
-            if len(m.groups()) >= 2:
+            if (m != None) and (len(m.groups()) >= 2):
+                print('CDYS: ' + m.group(1))
                 self.data = int(m.group(1))
                 self.parse_success = True
 
         except Exception as e:
-            print('CDYCrawlingJob: Unexpected exception occurred when parsing CDYS data. Exception: ' + str(e))
+            print('CDYSCrawlingJob: Unexpected exception occurred when parsing CDYS data. Exception: ' + str(e))
 
