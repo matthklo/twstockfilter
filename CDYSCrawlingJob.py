@@ -27,7 +27,7 @@ class CDYSCrawlingJob:
         target_url = self.data_src_url + str(stock_id)
         self.web_req = urllib2.Request(target_url, None, headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' })
-        
+        self.target_id = stock_id
         self.web_req_success = False
         self.parse_success = False
         self.data = 0
@@ -39,7 +39,7 @@ class CDYSCrawlingJob:
         #### Fire the web request.
         try:
             # Apply a random delay of 1 ~ 7 seconds to prevent getting banned by GoodInfo!
-            time.sleep(random.random * 6 + 1)
+            time.sleep(random.random() * 6 + 1)
             result = urllib2.urlopen(self.web_req).read().decode('utf-8')
             self.web_req_success = True
         except urllib2.HTTPError as e:
