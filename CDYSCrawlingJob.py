@@ -55,8 +55,7 @@ class CDYSCrawlingJob:
 
         try:
             m = re.search(u'連續([0-9]+)年配發股利', result)
-            if (m != None) and (len(m.groups()) >= 2):
-                print('CDYS: ' + m.group(1))
+            if (m != None) and (len(m.groups()) >= 1):
                 self.data = int(m.group(1))
                 self.parse_success = True
 
