@@ -189,6 +189,69 @@ def fetch_data(years):
 
     return result
 
+def fetch_cdys_data(entities):
+    tick_start = time.time()
+
+    # Create a work pool, append crawling jobs and wait.
+    job_cnt = 0
+    wp = WorkPool()
+    for e in entities.itervalues():
+        j = CDYCrawlingJob(e['id'])
+        wp.append_job(j)
+        job_cnt += 1
+    wp.start()
+
+    # Collect the results
+    done_cnt = 0
+    result = {}
+    while done_cnt < job_cnt:
+        j = wp.retrieve_job()
+        if None == j:
+            time.sleep(0.1)
+            continue
+
+        done_cnt += 1
+
+        if j.web_req_success == False:
+            if g_verbose:
+                print('Warning: CDYCrawlingJob failed on web request. Stock id: ' + str(j.target_id))
+        elif j.parse_success == False:
+            if g_verbose:
+                print('Warning: CDYCrawlingJob failed on parsing. Stock id: ' + str(j.target_id))
+        else:
+            result[j.target_id] = j.data
+
+    # Shutdown work pool
+    wp.join()
+
+    if g_verbose:
+        print('Info: fetch_cdys_data() costs %f seconds' % (time.time() - tick_start))
+
+    return result
+
+def commit_cdys_data(entities, data):
+    b = g_gdclient.batch()
+    b.begin()
+    bcnt = 0
+
+    for e in entities.itervalues():
+        if e['id'] not in data:
+            continue
+        
+        d = data[e['id']]
+        if isinstance(d,int):
+            e.update({'cdys':d})
+        b.put(e)
+
+        bcnt += 1
+        if bcnt >= 500:
+            b.commit()
+            b = g_gdclient.batch()
+            b.begin()
+            bcnt = 0
+    
+    if bcnt > 0:
+        b.commit()
 
 def show_usage():
     print('Usage: %s [-v] [-n] [-d] [-y year] [-q stock id]' % sys.argv[0])
@@ -197,6 +260,7 @@ def show_usage():
     print('    [-d] Delete all data from database then exit.')
     print('    [-y] Specify the lastest data year. (Default: last year)')
     print('    [-q] Query given stock id.')
+    print('    [-c] Fetch & update CDYS data only.')
 
 if __name__ == '__main__':
     # Check if GOOGLE_APPLICATION_CREDENTIALS environment variable has been set
@@ -206,7 +270,7 @@ if __name__ == '__main__':
 
     # Parse command line arguments
     try:
-        pairs, remaining = getopt.getopt(sys.argv[1:], 'nvdy:q:h')
+        pairs, remaining = getopt.getopt(sys.argv[1:], 'nvdy:q:hc')
     except getopt.GetoptError as e:
         print('Error: ' + str(e), file=sys.stderr)
         show_usage()
@@ -217,6 +281,7 @@ if __name__ == '__main__':
     g_year = datetime.date.today().year - 1
     g_gdclient = datastore.Client()
     g_delete = False
+    g_cdys_only = False
 
     for p in pairs:
         if p[0] == '-v':
@@ -236,6 +301,8 @@ if __name__ == '__main__':
         elif p[0] == '-h':
             show_usage()
             sys.exit(0)
+        elif p[0] == '-c':
+            g_cdys_only = True
 
     # Perform data deletion when requested.
     if g_delete:
@@ -265,6 +332,12 @@ if __name__ == '__main__':
     entities = {}
     for e in g_gdclient.query(kind='tw_stock_data').fetch():
         entities[e['id']] = e
+
+    # Fetch & update CDYS data
+    cdys_data = fetch_cdys_data(entities)
+    commit_cdys_data(entities, cdys_data)
+    if g_cdys_only:
+        sys.exit(0)
 
     if g_data_fetching:
         # Decide the year range of data.
