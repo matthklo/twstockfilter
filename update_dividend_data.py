@@ -195,7 +195,7 @@ def fetch_cdys_data(entities):
 
     # Create a work pool, append crawling jobs and wait.
     job_cnt = 0
-    wp = WorkPool()
+    wp = WorkPool(thread_num=1)
     for e in entities.itervalues():
         j = CDYSCrawlingJob(e['id'])
         wp.append_job(j)

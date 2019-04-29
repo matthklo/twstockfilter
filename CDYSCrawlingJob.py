@@ -38,8 +38,8 @@ class CDYSCrawlingJob:
 
         #### Fire the web request.
         try:
-            # Apply a random delay of 1 ~ 7 seconds to prevent getting banned by GoodInfo!
-            time.sleep(random.random() * 6 + 1)
+            # Apply a random delay of 5 ~ 10 seconds to prevent getting banned by GoodInfo!
+            time.sleep(random.random() * 5 + 5)
             result = urllib2.urlopen(self.web_req).read().decode('utf-8')
             self.web_req_success = True
         except urllib2.HTTPError as e:
