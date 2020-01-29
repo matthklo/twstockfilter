@@ -16,7 +16,7 @@ import urllib2
         {
           "2227": {
             "id": 2227,
-            "name": "摩奇",
+            "name": "裕日車",
             "cash_dividend": 1.0,
             "stock_dividend": 1.0
           }
@@ -90,10 +90,10 @@ class DividendCrawlingJob:
                 entry[1] : Stock ID           (string)
                 entry[3] : Stock Name         (string)
                 entry[5] : Report year        (int, should be the same as the 'self.year')
-                entry[7] : Profit after taxed (float or None, unit: 億)
-                entry[9] : EPS                (float or None)
-                entry[15]: Cash dividend      (float)
-                entry[21]: Stock dividend     (float)
+                entry[9] : Profit after taxed (float or None, unit: 億)
+                entry[11] : EPS                (float or None)
+                entry[17]: Cash dividend      (float)
+                entry[23]: Stock dividend     (float)
             """
 
             for e in total_entries:
@@ -103,13 +103,13 @@ class DividendCrawlingJob:
 
                 # Parse profit whenever possible
                 try:
-                    profit = float(e[7].replace(',',''))
+                    profit = float(e[9].replace(',',''))
                 except:
                     profit = None
 
                 # Parse eps whenever possible
                 try:
-                    eps = float(e[9])
+                    eps = float(e[11])
                 except:
                     eps = None
 
@@ -119,12 +119,18 @@ class DividendCrawlingJob:
                     'year': int(e[5]), 
                     'profit': profit,
                     'eps' : eps,
-                    'cash_dividend': float(e[15]), 
-                    'stock_dividend': float(e[21]) 
+                    'cash_dividend': float(e[17]), 
+                    'stock_dividend': float(e[23]) 
                 }
 
             self.parse_success = True
 
         except Exception as e:
             print('DividendCrawlingJob: Unexpected exception occurred when parsing devidend data. Exception: ' + str(e))
+
+if __name__ == '__main__':
+    # Entry point to quickly verify parsing result
+    job = DividendCrawlingJob(2019)
+    job()
+    print(str(job.data['2816']))
 
