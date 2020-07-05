@@ -66,7 +66,7 @@ def generate_cdys():
   # it's the last year.
   curDate = time.localtime()
   curYear = curDate.tm_year
-  if curDate.tm_mon < 6:
+  if curDate.tm_mon <= 6:
     curYear -= 1
   
   d = {}

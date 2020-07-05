@@ -231,7 +231,7 @@ def show_usage():
     print('    [-n] No dividend data processing.')
     print('    [-c] No CDYS data processing.')
     print('    [-d] Delete all data from database then exit.')
-    print('    [-y] Specify the lastest data year. (Default: last year)')
+    print('    [-y] Specify the lastest data year. (Default: current year if has passed June, last year otherwise)')
     print('    [-q] Query given stock id.')
 
 if __name__ == '__main__':
@@ -251,9 +251,13 @@ if __name__ == '__main__':
     g_verbose = False
     g_data_processing = True
     g_cdys_processing = True
-    g_year = datetime.date.today().year - 1
     g_gdclient = datastore.Client()
     g_delete = False
+
+    cur_date = datetime.date.today()
+    g_year = cur_date.year
+    if cur_date.month <= 6:
+        g_year -= 1
 
     for p in pairs:
         if p[0] == '-v':
