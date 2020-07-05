@@ -9,7 +9,7 @@ import time
 
 def fetch_dividend_data(y):
   # See if we have local data for the year...
-  data_filename = 'year_' + str(y) + '.json'
+  data_filename = 'dividend_data/year_' + str(y) + '.json'
   try:
     with open(data_filename, 'r') as rf:
       return json.load(rf)

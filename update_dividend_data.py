@@ -5,7 +5,7 @@ from __future__ import print_function
 from google.cloud import datastore
 from WorkPool import WorkPool
 from DividendCrawlingJob import DividendCrawlingJob
-from CDYSCrawlingJob import CDYSCrawlingJob
+import fetch_dividend_data
 
 import datetime
 import getopt
@@ -193,37 +193,7 @@ def fetch_data(years):
 def fetch_cdys_data(entities):
     tick_start = time.time()
 
-    # Create a work pool, append crawling jobs and wait.
-    job_cnt = 0
-    wp = WorkPool(thread_num=1)
-    for e in entities.itervalues():
-        j = CDYSCrawlingJob(e['id'])
-        wp.append_job(j)
-        job_cnt += 1
-    wp.start()
-
-    # Collect the results
-    done_cnt = 0
-    result = {}
-    while done_cnt < job_cnt:
-        j = wp.retrieve_job()
-        if None == j:
-            time.sleep(0.1)
-            continue
-
-        done_cnt += 1
-
-        if j.web_req_success == False:
-            if g_verbose:
-                print('Warning: CDYSCrawlingJob failed on web request. Stock id: ' + str(j.target_id))
-        elif j.parse_success == False:
-            if g_verbose:
-                print('Warning: CDYSCrawlingJob failed on parsing. Stock id: ' + str(j.target_id))
-        else:
-            result[j.target_id] = j.data
-
-    # Shutdown work pool
-    wp.join()
+    result = fetch_dividend_data.generate_cdys()
 
     if g_verbose:
         print('Info: fetch_cdys_data() costs %f seconds' % (time.time() - tick_start))
@@ -236,10 +206,11 @@ def commit_cdys_data(entities, data):
     bcnt = 0
 
     for e in entities.itervalues():
-        if e['id'] not in data:
+        stock_id = str(e['id'])
+        if stock_id not in data:
             continue
         
-        d = data[e['id']]
+        d = data[stock_id]
         if isinstance(d,int):
             e.update({'cdys':d})
         b.put(e)
@@ -336,8 +307,7 @@ if __name__ == '__main__':
 
     # Fetch & update CDYS data
     if g_cdys_processing:
-        cdys_data = fetch_cdys_data(entities)
-        commit_cdys_data(entities, cdys_data)
+        commit_cdys_data(entities, fetch_cdys_data(entities))
 
     if g_data_processing:
         # Decide the year range of data.
