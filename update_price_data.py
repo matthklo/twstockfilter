@@ -12,6 +12,7 @@ import json
 import os
 import sys
 import time
+import urllib2
 
 def commit_computed_data(entities):
     b = g_gdclient.batch()
@@ -91,42 +92,42 @@ def commit_price_data(entities, data):
     
     if bcnt > 0:
         b.commit()
-            
 
-def fetch_data(entities):
+def fetch_data(entities, datestr=None):
     tick_start = time.time()
 
-    # Create a work pool, append crawling jobs and wait.
-    job_cnt = 0
-    wp = WorkPool()
-    for e in entities.itervalues():
-        j = PriceCrawlingJob(e['id'])
-        wp.append_job(j)
-        job_cnt += 1
-    wp.start()
+    if datestr == None:
+        today = datetime.date.today()
+        datestr = '%04d%02d%02d' % (today.year, today.month, today.day)
+    url = 'https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&date=%s&type=ALLBUT0999&_=%d' % (datestr, int(time.time() * 1000))
+    if g_verbose:
+        print('Info: fetch_data(): Fetch data from URL ... ' + url)
+    rawjson = urllib2.urlopen(url).read()
 
-    # Collect the results
-    done_cnt = 0
+    if g_verbose:
+        print('Info: fetch_data(): Parsing fetched data...')
+    datasheet = json.loads(rawjson)
+
+    if 'data9' not in datasheet:
+        print('Warning: No stock data fetched. Either not in a working day or unexpected format changes.')
+
+    stocks = {}
+    for stock in datasheet['data9']:
+        sdata = {}
+        sdata['id'] = stock[0]
+        try:
+            sdata['price'] = float(stock[8])
+        except Exception as e:
+            sdata['price'] = 0.0
+        stocks[sdata['id']] = sdata
+
     result = {}
-    while done_cnt < job_cnt:
-        j = wp.retrieve_job()
-        if None == j:
-            time.sleep(0.1)
-            continue
-
-        done_cnt += 1
-
-        if j.web_req_success == False:
+    for e in entities.itervalues():
+        if e['id'] not in stocks:
             if g_verbose:
-                print('Warning: PriceCrawlingJob failed on web request. Stock id: ' + str(j.target_id))
-        elif j.parse_success == False:
-            if g_verbose:
-                print('Warning: PriceCrawlingJob failed on parsing. Stock id: ' + str(j.target_id))
+                print('Warning: Stock %s does not exist in fetched datasheet.' % e['id'])
         else:
-            result[j.target_id] = j.data
-
-    # Shutdown work pool
-    wp.join()
+            result[e['id']] = stocks[e['id']]
 
     if g_verbose:
         print('Info: fetch_data() costs %f seconds' % (time.time() - tick_start))
@@ -135,10 +136,11 @@ def fetch_data(entities):
 
 
 def show_usage():
-    print('Usage: %s [-v] [-n] [-q stock id]' % sys.argv[0])
+    print('Usage: %s [-v] [-n] [-q stock id] [-d YYYYMMDD]' % sys.argv[0])
     print('    [-v] Show verbose log.')
     print('    [-n] No data fetching.')
-    print('    [-q] Query given stock id. No database update.')
+    print('    [-q] No database update.')
+    print('    [-d] Override the date string. Default: today')
 
 if __name__ == '__main__':
     # Check if GOOGLE_APPLICATION_CREDENTIALS environment variable has been set
@@ -148,7 +150,7 @@ if __name__ == '__main__':
 
     # Parse command line arguments
     try:
-        pairs, remaining = getopt.getopt(sys.argv[1:], 'nvq:h')
+        pairs, remaining = getopt.getopt(sys.argv[1:], 'nvqhd:')
     except getopt.GetoptError as e:
         print('Error: ' + str(e), file=sys.stderr)
         show_usage()
@@ -157,20 +159,18 @@ if __name__ == '__main__':
     g_verbose = False
     g_data_fetching = True
     g_gdclient = datastore.Client()
+    g_date_str = None
+    g_commit = True
 
     for p in pairs:
         if p[0] == '-v':
             g_verbose = True
         elif p[0] == '-n':
             g_data_fetching = False
+        elif p[0] == '-d':
+            g_date_str = p[1]
         elif p[0] == '-q':
-            p = PriceCrawlingJob(p[1], g_verbose)
-            p()
-            if p.web_req_success and p.parse_success:
-                print(str(p.data))
-            else:
-                print('Info: PriceCrawlingJob ends up with failure.')
-            sys.exit(0)
+            g_commit = False
         elif p[0] == '-h':
             show_usage()
             sys.exit(0)
@@ -183,12 +183,13 @@ if __name__ == '__main__':
     if g_data_fetching:
         # Fetch & commit
         if g_verbose:
-            print('Info: Fetching %d stocks.' % len(entities))
-        data = fetch_data(entities)
-        commit_price_data(entities, data)
+            print('Info: Fetching stock price data ...')
+        data = fetch_data(entities, g_date_str)
+        if g_commit:
+            commit_price_data(entities, data)
 
     # Compute & commit
-    if len(entities) > 0:
+    if (len(entities) > 0) and g_commit:
         if g_verbose:
             print('Info: Computing %d entities ...' % len(entities))
         commit_computed_data(entities)
