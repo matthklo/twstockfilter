@@ -1,5 +1,5 @@
 # twstockfilter
-從 Yahoo!股票、以及 Goodinfo!台灣股市資訊網 這兩個網站為來源，收集台灣上市股票資訊，儲存到 Google Cloud Datastore 中 (有免費使用額度)。並且供其它網頁服務使用 (見以下 "姊妹專案")。
+從台灣證券交易所、以及 Goodinfo!台灣股市資訊網 這兩個網站為來源，收集台灣上市股票資訊，儲存到 Google Cloud Datastore 中 (有免費使用額度)。並且供其它網頁服務使用 (見以下 "姊妹專案")。
 
 ## 環境設定
 - 可在 Windows / Unix 上執行
@@ -18,12 +18,14 @@
 
 ### PriceCrawlingJob.py 以及 DividendCrawlingJob.py 
 分別向奇摩股票、以及 Goodinfo! 這兩個網站抓取資料的 "job"。
+[2021/10/23] PriceCrawlingJob.py 已停用，改由 update_price_data.py 中直接向台灣證券交易所取得資料
 
 ### update_dividend_data.py 
 建立 WorkPool，產生 DividendCrawlingJob 交付執行，目的是提取台灣所有上市股票的歷年配息配股數據統整後上傳到 Cloud Datastore 中儲存。
 
 ### update_price_data.py 
-建立 WorkPool，產生 PriceCrawlingJob 交付執行，目的是提取所有上市股票的最新成交價格，統整後上傳到 Cloud Datastore 中儲存。
+抓取所有上市股票的最新成交價格，統整後上傳到 Cloud Datastore 中儲存。
+若執行時並非股票交易日，請手動指定 -d 參數給定最近一個交易日，才得以抓到正確資料。
 
 ### query.py
 方便於 console 中驗證 Datastore 中的資料用的。可向 Datastore 發出 query 篩選近五年平均殖利高於指定值以上者，作為定期存股的目標。
