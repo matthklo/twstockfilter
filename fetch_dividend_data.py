@@ -17,6 +17,7 @@ def fetch_dividend_data(y):
     pass
 
   # Local data is not available, fetch from web...
+  print('Fetching dividend data for year ' + str(y) + ' ...')
   target_url = 'https://goodinfo.tw/StockInfo/StockDividendPolicyList.asp?MARKET_CAT=%%E4%%B8%%8A%%E5%%B8%%82&INDUSTRY_CAT=%%E5%%85%%A8%%E9%%83%%A8&YEAR=%d' % y
   req = urllib2.Request(target_url, None, headers = {
       'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' })
@@ -30,7 +31,8 @@ def fetch_dividend_data(y):
 
   dividend_data = {}
   cnt = 0
-  for entry in re.finditer(r"<tr id='row[0-9]+' .+?</tr>", r.read()):  # For each HTML table row ...
+  for entry in re.finditer(r"<tr[^>]*>[ ]*<td><nobr>[^<>]+</nobr></td>.+?</tr>", r.read()):  # For each HTML table row ...
+    #print(entry.group(0))
     cells = []
     for cell in re.finditer(r"<td.+?</td>", entry.group(0)):  # For each HTML table cell (<td...</td>) ...
       # Strip all html tag (<...>) in the matched string.
@@ -55,8 +57,9 @@ def fetch_dividend_data(y):
   print('Dividend data has fetched from web. Year: ' + str(y) + ', Stock numbers: ' + str(cnt))
 
   # Preserve data at local.
-  with open(data_filename, 'w') as wf:
-    json.dump(dividend_data, wf)
+  if cnt > 0:
+    with open(data_filename, 'w') as wf:
+      json.dump(dividend_data, wf)
 
   return dividend_data
 
