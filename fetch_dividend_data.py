@@ -31,14 +31,18 @@ def fetch_dividend_data(y):
 
   dividend_data = {}
   cnt = 0
-  for entry in re.finditer(r"<tr[^>]*>[ ]*<td><nobr>[^<>]+</nobr></td>.+?</tr>", r.read()):  # For each HTML table row ...
+  for entry in re.finditer(r"<tr.+?</tr>", r.read()):  # For each HTML table row ...
     #print(entry.group(0))
     cells = []
     for cell in re.finditer(r"<td.+?</td>", entry.group(0)):  # For each HTML table cell (<td...</td>) ...
       # Strip all html tag (<...>) in the matched string.
       cells.append(re.sub(r"<.+?>", "", cell.group(0)).strip())
       #print(cells[len(cells)-1])
-      
+
+    if len(cells) < 20:
+      continue
+    if cells[0].decode('utf-8') != u'上市':
+      continue
     #print('Cells count = ' + str(len(cells)))
 
     # As current state (2020 July), there should be 20 cells in an entry. The data we interest are
@@ -97,7 +101,7 @@ def generate_cdys():
 
 
 if __name__ == '__main__':
-  #data = fetch_dividend_data(2020)
+  #data = fetch_dividend_data(2022)
 
   cdys = generate_cdys()
   print(str(cdys))
