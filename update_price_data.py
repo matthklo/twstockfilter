@@ -116,7 +116,7 @@ def fetch_data(entities, datestr=None):
         sdata = {}
         sdata['id'] = stock[0]
         try:
-            sdata['price'] = float(stock[8])
+            sdata['price'] = float(stock[8].replace(',',''))
         except Exception as e:
             sdata['price'] = 0.0
         stocks[sdata['id']] = sdata

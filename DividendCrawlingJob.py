@@ -38,7 +38,7 @@ class DividendCrawlingJob:
         # Build web request
         target_url = self.data_src_url + str(year)
         self.web_req = urllib2.Request(target_url, None, headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' })
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36' })
         
         self.web_req_success = False
         self.parse_success = False
@@ -60,6 +60,7 @@ class DividendCrawlingJob:
 
         #### Early abort on error
         if False == self.web_req_success:
+            print('DividendCrawlingJob: Web request ended up as failed.')
             return
 
         #### Continue parsing dividend data.
@@ -76,6 +77,7 @@ class DividendCrawlingJob:
             total_entries = []
             entry = []
             for token in raw_tokens:
+                print('DividendCrawlingJob: token= ' + token)
                 if token == u'上市':
                     total_entries.append(entry)
                     entry = []
@@ -130,7 +132,7 @@ class DividendCrawlingJob:
 
 if __name__ == '__main__':
     # Entry point to quickly verify parsing result
-    job = DividendCrawlingJob(2019)
+    job = DividendCrawlingJob(2023)
     job()
     print(str(job.data['2816']))
 

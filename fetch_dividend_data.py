@@ -20,7 +20,7 @@ def fetch_dividend_data(y):
   print('Fetching dividend data for year ' + str(y) + ' ...')
   target_url = 'https://goodinfo.tw/StockInfo/StockDividendPolicyList.asp?MARKET_CAT=%%E4%%B8%%8A%%E5%%B8%%82&INDUSTRY_CAT=%%E5%%85%%A8%%E9%%83%%A8&YEAR=%d' % y
   req = urllib2.Request(target_url, None, headers = {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' })
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36' })
   r = urllib2.urlopen(req)
   if r.getcode() != 200:
     print('Error: Failed to fetch dividend data from Goodinfo.tw. Year: ' + str(y))
@@ -39,7 +39,8 @@ def fetch_dividend_data(y):
       cells.append(re.sub(r"<.+?>", "", cell.group(0)).strip())
       #print(cells[len(cells)-1])
 
-    if len(cells) < 20:
+    #print('cells len = ' + str(len(cells)))
+    if len(cells) < 16:
       continue
     if cells[0].decode('utf-8') != u'上市':
       continue
@@ -101,7 +102,7 @@ def generate_cdys():
 
 
 if __name__ == '__main__':
-  #data = fetch_dividend_data(2022)
+  #data = fetch_dividend_data(2023)
 
   cdys = generate_cdys()
   print(str(cdys))
