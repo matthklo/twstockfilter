@@ -77,7 +77,7 @@ class DividendCrawlingJob:
             total_entries = []
             entry = []
             for token in raw_tokens:
-                print('DividendCrawlingJob: token= ' + token)
+                #print('DividendCrawlingJob: token= ' + token)
                 if token == u'上市':
                     total_entries.append(entry)
                     entry = []
