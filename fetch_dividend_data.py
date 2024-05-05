@@ -4,8 +4,9 @@
 from __future__ import print_function
 import json
 import re
-import urllib2
+import tempfile
 import time
+import subprocess
 
 def fetch_dividend_data(y):
   # See if we have local data for the year...
@@ -18,53 +19,60 @@ def fetch_dividend_data(y):
 
   # Local data is not available, fetch from web...
   print('Fetching dividend data for year ' + str(y) + ' ...')
-  target_url = 'https://goodinfo.tw/StockInfo/StockDividendPolicyList.asp?MARKET_CAT=%%E4%%B8%%8A%%E5%%B8%%82&INDUSTRY_CAT=%%E5%%85%%A8%%E9%%83%%A8&YEAR=%d' % y
-  req = urllib2.Request(target_url, None, headers = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36' })
-  r = urllib2.urlopen(req)
-  if r.getcode() != 200:
-    print('Error: Failed to fetch dividend data from Goodinfo.tw. Year: ' + str(y))
-    return None
+  target_url = 'https://goodinfo.tw/tw/StockDividendPolicyList.asp?MARKET_CAT=%%E4%%B8%%8A%%E5%%B8%%82&INDUSTRY_CAT=%%E5%%85%%A8%%E9%%83%%A8&YEAR=%d' % y
 
-  #with open('test.txt', 'wb') as wf:
-  #  wf.write(r.read())
+  with tempfile.TemporaryFile() as tmpout:
+    # On Ubuntu, install chromium-browser with command: 'apt install chromium-browser'
+    chromium_path = '/usr/bin/chromium-browser'
 
-  dividend_data = {}
-  cnt = 0
-  for entry in re.finditer(r"<tr.+?</tr>", r.read()):  # For each HTML table row ...
-    #print(entry.group(0))
-    cells = []
-    for cell in re.finditer(r"<td.+?</td>", entry.group(0)):  # For each HTML table cell (<td...</td>) ...
-      # Strip all html tag (<...>) in the matched string.
-      cells.append(re.sub(r"<.+?>", "", cell.group(0)).strip())
-      #print(cells[len(cells)-1])
+    # Download the full web content with the help of Chromium browser
+    subprocess.check_call([chromium_path, '--no-sandbox', '--no-default-browser-check', '--no-first-run',
+      '--disable-default-apps', '--disable-popup-blocking', '--disable-translate', '--enable-logging',
+      '--disable-background-timer-throttling', '--headless', '--disable-gpu', '--dump-dom', '--virtual-time-budget=10000',
+      target_url], stdout=tmpout)
+    tmpout.seek(0)
 
-    #print('cells len = ' + str(len(cells)))
-    if len(cells) < 16:
-      continue
-    if cells[0].decode('utf-8') != u'上市':
-      continue
-    #print('Cells count = ' + str(len(cells)))
+    # save the fetched data to local file for debugging
+    #with open('test.txt', 'wb') as wf:
+    #  wf.write(tmpout.read())
+    #  tmpout.seek(0)
 
-    # As current state (2020 July), there should be 20 cells in an entry. The data we interest are
-    # 1: Stock ID
-    # 2: Stock Name (in Traditional Chinese)
-    # 3,4: Dividend years (delivery year & dividend year)
-    # 5: Annual profit (Unit: 100 million NTD)
-    # 6: EPS
-    # 7,8,9:    Cash dividends (profit, capital, subtotal -- profit + captital)
-    # 10,11,12: Stock dividens (profit, captial, subtotal -- profit + captital)
-    # 13:       Dividen subtotal (Cell #9 + Cell #12)
+    dividend_data = {}
+    cnt = 0
+    for entry in re.finditer(r"<tr.+?</tr>", tmpout.read()):  # For each HTML table row ...
+      #print(entry.group(0))
+      cells = []
+      for cell in re.finditer(r"<td.+?</td>", entry.group(0)):  # For each HTML table cell (<td...</td>) ...
+        # Strip all html tag (<...>) in the matched string.
+        cells.append(re.sub(r"<.+?>", "", cell.group(0)).strip())
+        #print(cells[len(cells)-1])
 
-    dividend_data[cells[1]] = cells
+      #print('cells len = ' + str(len(cells)))
+      if len(cells) < 16:
+        continue
+      if cells[0].decode('utf-8') != u'上市':
+        continue
+      #print('Cells count = ' + str(len(cells)))
 
-    cnt+=1
-  print('Dividend data has fetched from web. Year: ' + str(y) + ', Stock numbers: ' + str(cnt))
+      # As current state (2020 July), there should be 20 cells in an entry. The data we interest are
+      # 1: Stock ID
+      # 2: Stock Name (in Traditional Chinese)
+      # 3,4: Dividend years (delivery year & dividend year)
+      # 5: Annual profit (Unit: 100 million NTD)
+      # 6: EPS
+      # 7,8,9:    Cash dividends (profit, capital, subtotal -- profit + captital)
+      # 10,11,12: Stock dividens (profit, captial, subtotal -- profit + captital)
+      # 13:       Dividen subtotal (Cell #9 + Cell #12)
 
-  # Preserve data at local.
-  if cnt > 0:
-    with open(data_filename, 'w') as wf:
-      json.dump(dividend_data, wf)
+      dividend_data[cells[1]] = cells
+
+      cnt+=1
+    print('Dividend data has fetched from web. Year: ' + str(y) + ', Stock numbers: ' + str(cnt))
+
+    # Preserve data at local.
+    if cnt > 0:
+      with open(data_filename, 'w') as wf:
+        json.dump(dividend_data, wf)
 
   return dividend_data
 
@@ -102,7 +110,7 @@ def generate_cdys():
 
 
 if __name__ == '__main__':
-  #data = fetch_dividend_data(2023)
+  #data = fetch_dividend_data(2024)
 
   cdys = generate_cdys()
   print(str(cdys))
