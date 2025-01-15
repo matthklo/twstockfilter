@@ -108,18 +108,27 @@ def fetch_data(entities, datestr=None):
         print('Info: fetch_data(): Parsing fetched data...')
     datasheet = json.loads(rawjson)
 
-    if 'data9' not in datasheet:
-        print('Warning: No stock data fetched. Either not in a working day or unexpected format changes.')
+    if 'tables' not in datasheet:
+        print('Warning: Unexpected stock data fetched. Possible reasons: 1. Today is not a working day, or 2. Data format changed.')
 
     stocks = {}
-    for stock in datasheet['data9']:
-        sdata = {}
-        sdata['id'] = stock[0]
-        try:
-            sdata['price'] = float(stock[8].replace(',',''))
-        except Exception as e:
-            sdata['price'] = 0.0
-        stocks[sdata['id']] = sdata
+    for table in datasheet['tables']:
+        if 'title' not in table:
+            continue
+        if u'每日收盤行情' not in table['title']:
+            continue
+
+        if g_verbose:
+            print('Info: fetch_data(): Stock price table located. Length=%d' % (len(table['data'])))
+
+        for stock in table['data']:
+            sdata = {}
+            sdata['id'] = stock[0]
+            try:
+                sdata['price'] = float(stock[8].replace(',',''))
+            except Exception as e:
+                sdata['price'] = 0.0
+            stocks[sdata['id']] = sdata
 
     result = {}
     for e in entities.itervalues():
